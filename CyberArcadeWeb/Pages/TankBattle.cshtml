@@ -1,0 +1,206 @@
+@page
+@{
+    ViewData["Title"] = "Tank Battle Modern";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tank Battle Modern</title>
+    <style>
+        body {
+            background-color: #050505; color: #00ff41; font-family: 'Courier New', monospace;
+            margin: 0; overflow: hidden; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .game-container { position: relative; text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas {
+            border: 3px solid #00ff41; background-color: #0a0a0a;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.3);
+            max-width: 95vw; max-height: 85vh; display: block;
+        }
+        .ui-overlay { margin-top: 15px; color: #888; font-size: 14px; text-align: center; z-index: 10; }
+        .btn-back {
+            display: inline-block; margin-top: 15px; border: 1px solid #444; color: #666;
+            padding: 8px 16px; text-decoration: none; font-size: 12px; transition: 0.3s; text-transform: uppercase;
+        }
+        .btn-back:hover { border-color: #00ff41; color: #00ff41; background-color: #001100; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        <div class="ui-overlay">
+            <span>[WASD] P1 • [SPACE] SKJUT • [ENTER] STARTA</span><br>
+            <a href="/" class="btn-back">Avsluta Uppdrag (ESC)</a>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const STATE = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+        let currentState = STATE.MENU;
+        let gameMode = 1; let weaponIndex = 0;
+        const weapons = [
+            { name: "STANDARD", speed: 7, cool: 25, color: "yellow", size: 6 },
+            { name: "RAPID FIRE", speed: 9, cool: 10, color: "orange", size: 4 },
+            { name: "PLASMA", speed: 5, cool: 50, color: "cyan", size: 12 }
+        ];
+        const walls = [{x:150, y:150, w:50, h:250}, {x:800, y:150, w:50, h:250}, {x:400, y:300, w:200, h:100}, {x:250, y:550, w:500, h:40}, {x:250, y:100, w:500, h:40}];
+        let p1 = {}, p2 = {}, bullets = [], particles = [], keys = {}, winnerMsg = "", aiTimer = 0, aiDir = "NONE";
+
+        window.addEventListener("keydown", e => {
+            keys[e.code] = true;
+            if (currentState === STATE.MENU) {
+                if (e.key === "1") gameMode = 1; if (e.key === "2") gameMode = 2;
+                if (e.key === "w" || e.key === "W") weaponIndex = (weaponIndex + 1) % weapons.length;
+                if (e.key === "Enter" || e.code === "Space") startGame();
+            }
+            if (currentState === STATE.GAMEOVER && (e.key === "Enter" || e.code === "Space")) currentState = STATE.MENU;
+            if (e.key === "Escape") window.location.href = "/";
+        });
+        window.addEventListener("keyup", e => keys[e.code] = false);
+
+        function startGame() {
+            p1 = createTank(100, 350, "#ff0055", "RIGHT");
+            p2 = createTank(900, 350, "#00ccff", "LEFT");
+            bullets = []; particles = []; currentState = STATE.PLAYING;
+        }
+        function createTank(x, y, color, dir) { return { x: x, y: y, w: 40, h: 40, c: color, dir: dir, hp: 5, cool: 0 }; }
+
+        function loop() {
+            ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (currentState === STATE.MENU) drawMenu();
+            else if (currentState === STATE.PLAYING) updateAndDrawGame();
+            else if (currentState === STATE.GAMEOVER) drawGameOver();
+            requestAnimationFrame(loop);
+        }
+
+        function drawMenu() {
+            drawGrid(); ctx.textAlign = "center";
+            ctx.fillStyle = "#00ff41"; ctx.font = "bold 60px Courier New"; ctx.fillText("TANK BATTLE", canvas.width/2, 200);
+            ctx.font = "25px Courier New";
+            ctx.fillStyle = gameMode === 1 ? "#fff" : "#444"; ctx.fillText("[1] 1 PLAYER (VS CPU)", canvas.width/2, 300);
+            ctx.fillStyle = gameMode === 2 ? "#fff" : "#444"; ctx.fillText("[2] 2 PLAYERS", canvas.width/2, 340);
+            ctx.fillStyle = "yellow"; ctx.fillText(`VAPEN (W): < ${weapons[weaponIndex].name} >`, canvas.width/2, 420);
+            ctx.fillStyle = "#ff0055"; ctx.font = "20px Courier New"; ctx.fillText("TRYCK [ENTER] FÖR ATT STARTA", canvas.width/2, 550);
+        }
+
+        function updateAndDrawGame() {
+            drawGrid();
+            handleMovement(p1, "KeyW", "KeyS", "KeyA", "KeyD"); if (keys["Space"] && p1.cool <= 0) shoot(p1);
+            if (gameMode === 2) { handleMovement(p2, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"); if (keys["Enter"] && p2.cool <= 0) shoot(p2); }
+            else handleCPU(p2, p1);
+            if (p1.cool > 0) p1.cool--; if (p2.cool > 0) p2.cool--;
+            updateBullets(); updateParticles();
+            drawWalls(); drawDetailedTank(p1); drawDetailedTank(p2); drawBullets(); drawParticles(); drawHUD();
+        }
+
+        function handleCPU(cpu, target) {
+            aiTimer--;
+            if (aiTimer <= 0) {
+                aiTimer = Math.random() * 30 + 10;
+                let dx = target.x - cpu.x, dy = target.y - cpu.y;
+                if (Math.abs(dx) > Math.abs(dy)) aiDir = dx > 0 ? "RIGHT" : "LEFT"; else aiDir = dy > 0 ? "DOWN" : "UP";
+            }
+            let speed = 2.5, ox = cpu.x, oy = cpu.y;
+            if (aiDir === "UP") { cpu.y -= speed; cpu.dir = "UP"; } else if (aiDir === "DOWN") { cpu.y += speed; cpu.dir = "DOWN"; }
+            else if (aiDir === "LEFT") { cpu.x -= speed; cpu.dir = "LEFT"; } else if (aiDir === "RIGHT") { cpu.x += speed; cpu.dir = "RIGHT"; }
+            if (checkCollision(cpu)) { cpu.x = ox; cpu.y = oy; aiDir = ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random()*4)]; aiTimer = 20; }
+            if (cpu.cool <= 0 && (Math.abs(cpu.x - target.x) < 30 || Math.abs(cpu.y - target.y) < 30)) shoot(cpu);
+        }
+
+        function handleMovement(t, u, d, l, r) {
+            let speed = 3.5, ox = t.x, oy = t.y;
+            if (keys[u]) { t.y -= speed; t.dir = "UP"; } else if (keys[d]) { t.y += speed; t.dir = "DOWN"; }
+            else if (keys[l]) { t.x -= speed; t.dir = "LEFT"; } else if (keys[r]) { t.x += speed; t.dir = "RIGHT"; }
+            if (checkCollision(t)) { t.x = ox; t.y = oy; }
+        }
+        function checkCollision(t) {
+            for (let w of walls) if (rectIntersect(t.x, t.y, t.w, t.h, w.x, w.y, w.w, w.h)) return true;
+            if (t.x < 0 || t.x > canvas.width - t.w || t.y < 0 || t.y > canvas.height - t.h) return true;
+            let other = (t === p1) ? p2 : p1; return rectIntersect(t.x, t.y, t.w, t.h, other.x, other.y, other.w, other.h);
+        }
+        function shoot(t) {
+            let wStats = weapons[weaponIndex]; t.cool = wStats.cool;
+            let bx = t.x + t.w/2 - wStats.size/2, by = t.y + t.h/2 - wStats.size/2, vx=0, vy=0;
+            if (t.dir === "UP") { vy = -wStats.speed; by -= 25; } else if (t.dir === "DOWN") { vy = wStats.speed; by += 25; }
+            else if (t.dir === "LEFT") { vx = -wStats.speed; bx -= 25; } else if (t.dir === "RIGHT") { vx = wStats.speed; bx += 25; }
+            bullets.push({ x: bx, y: by, vx: vx, vy: vy, owner: t, color: wStats.color, size: wStats.size });
+        }
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i]; b.x += b.vx; b.y += b.vy; let hit = false;
+                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) hit = true;
+                for (let w of walls) if (rectIntersect(b.x, b.y, b.size, b.size, w.x, w.y, w.w, w.h)) { hit = true; spawnParticles(b.x, b.y, "orange"); }
+                let enemy = (b.owner === p1) ? p2 : p1;
+                if (rectIntersect(b.x, b.y, b.size, b.size, enemy.x, enemy.y, enemy.w, enemy.h)) { hit = true; enemy.hp--; spawnParticles(b.x, b.y, enemy.c); if (enemy.hp <= 0) endGame((b.owner === p1) ? "RÖD SPELARE" : "BLÅ SPELARE"); }
+                if (hit) bullets.splice(i, 1);
+            }
+        }
+        function endGame(winner) { winnerMsg = winner + " VANN!"; currentState = STATE.GAMEOVER; }
+
+        // --- NY FUNKTION: RITA DETALJERAD STRIDSVAGN ---
+        function drawDetailedTank(t) {
+            let x = t.x, y = t.y, w = t.w, h = t.h;
+            
+            // 1. Larvfötter (Tracks)
+            ctx.fillStyle = "#222"; 
+            // Om vertikal (UP/DOWN)
+            if (t.dir === "UP" || t.dir === "DOWN") {
+                ctx.fillRect(x, y, 10, h); // Vänster fot
+                ctx.fillRect(x + w - 10, y, 10, h); // Höger fot
+                // Tread lines
+                ctx.fillStyle = "#444";
+                for(let i=0; i<h; i+=8) { ctx.fillRect(x, y+i, 10, 2); ctx.fillRect(x+w-10, y+i, 10, 2); }
+            } else { // Horisontell (LEFT/RIGHT)
+                ctx.fillRect(x, y, w, 10); // Topp fot
+                ctx.fillRect(x, y + h - 10, w, 10); // Botten fot
+                ctx.fillStyle = "#444";
+                for(let i=0; i<w; i+=8) { ctx.fillRect(x+i, y, 2, 10); ctx.fillRect(x+i, y+h-10, 2, 10); }
+            }
+
+            // 2. Chassi (Kroppen)
+            ctx.fillStyle = t.c;
+            ctx.shadowBlur = 10; ctx.shadowColor = t.c;
+            if (t.dir === "UP" || t.dir === "DOWN") ctx.fillRect(x + 8, y + 4, w - 16, h - 8);
+            else ctx.fillRect(x + 4, y + 8, w - 8, h - 16);
+            ctx.shadowBlur = 0;
+
+            // 3. Tornet (Turret)
+            ctx.fillStyle = "#111"; // Mörkare torn
+            let tx = x + w/2 - 8, ty = y + h/2 - 8;
+            ctx.fillRect(tx, ty, 16, 16);
+            ctx.strokeStyle = t.c; ctx.lineWidth = 1;
+            ctx.strokeRect(tx, ty, 16, 16); // Neonram runt tornet
+
+            // 4. Pipan (Barrel)
+            ctx.fillStyle = "#000";
+            let bx=x+15, by=y+15, bw=10, bh=10;
+            // Gör pipan längre och smalare
+            if (t.dir === "UP") { by -= 18; bh = 28; bx += 2; bw = 6; }
+            if (t.dir === "DOWN") { bh = 28; bx += 2; bw = 6; }
+            if (t.dir === "LEFT") { bx -= 18; bw = 28; by += 2; bh = 6; }
+            if (t.dir === "RIGHT") { bw = 28; by += 2; bh = 6; }
+            ctx.fillRect(bx, by, bw, bh);
+
+            // 5. HP Bar
+            ctx.fillStyle = "red"; ctx.fillRect(x, y-10, w, 4);
+            ctx.fillStyle = "#0f0"; ctx.fillRect(x, y-10, w*(t.hp/5), 4);
+        }
+
+        function drawWalls() { ctx.fillStyle = "#222"; ctx.strokeStyle = "#00ff41"; ctx.lineWidth = 2; for (let w of walls) { ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeRect(w.x, w.y, w.w, w.h); } }
+        function drawBullets() { for (let b of bullets) { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.size, b.size); } }
+        function drawHUD() { ctx.fillStyle = "white"; ctx.font = "20px Courier New"; ctx.textAlign = "left"; ctx.fillText("P1 HP: " + p1.hp, 20, 30); ctx.textAlign = "right"; ctx.fillText("P2 HP: " + p2.hp, canvas.width - 20, 30); }
+        function drawGameOver() { ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "50px Courier New"; ctx.fillText(winnerMsg, canvas.width/2, 300); ctx.font = "20px Courier New"; ctx.fillStyle = "#888"; ctx.fillText("Tryck [ENTER] för meny", canvas.width/2, 360); }
+        function drawGrid() { ctx.strokeStyle = "#111"; ctx.lineWidth = 1; for(let i=0; i<canvas.width; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); } for(let i=0; i<canvas.height; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); } }
+        function spawnParticles(x, y, color) { for(let i=0; i<10; i++) particles.push({x:x, y:y, vx:(Math.random()-.5)*5, vy:(Math.random()-.5)*5, life:20, c:color}); }
+        function updateParticles() { for(let i=particles.length-1; i>=0; i--) { let p = particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--; if(p.life<=0) particles.splice(i,1); } }
+        function drawParticles() { for(let p of particles) { ctx.fillStyle=p.c; ctx.fillRect(p.x, p.y, 4, 4); } }
+        function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) { return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1; }
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

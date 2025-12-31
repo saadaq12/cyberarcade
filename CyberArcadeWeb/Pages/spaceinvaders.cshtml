@@ -1,0 +1,75 @@
+@page
+@{
+    ViewData["Title"] = "Virus Defender";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virus Defender</title>
+    <style>
+        body { background-color: #000; color: #0ff; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { border: 2px solid #0ff; background: linear-gradient(to bottom, #001 0%, #000 100%); box-shadow: 0 0 50px rgba(0, 255, 255, 0.2); }
+        .btn-back { margin-top: 15px; border: 1px solid #0ff; color: #0ff; padding: 8px 16px; text-decoration: none; }
+        .btn-back:hover { background-color: #0ff; color: black; }
+    </style>
+</head>
+<body>
+    <canvas id="gc" width="600" height="600"></canvas>
+    <div style="margin-top:10px;">[VÄNSTER/HÖGER] Flytta • [SPACE] Skjut Virus</div>
+    <a href="/" class="btn-back">Avbryt</a>
+    <script>
+        const c=document.getElementById("gc"), x=c.getContext("2d");
+        let p={x:280,y:550,w:40,h:20}, bullets=[], enemies=[], eDir=1, frames=0, score=0, over=false;
+        
+        // Skapa fiender
+        for(let r=0;r<4;r++) for(let c=0;c<8;c++) enemies.push({x:50+c*60, y:50+r*40, w:30, h:30, a:true});
+
+        let keys={};
+        window.onkeydown=e=>keys[e.code]=true; window.onkeyup=e=>keys[e.code]=false;
+
+        function loop(){
+            if(over) { x.fillStyle="red"; x.font="50px Courier"; x.textAlign="center"; x.fillText("SYSTEM INFECTED",300,300); return; }
+            x.fillStyle="#000"; x.fillRect(0,0,600,600);
+
+            // Spelare
+            if(keys["ArrowLeft"] && p.x>0) p.x-=4;
+            if(keys["ArrowRight"] && p.x<560) p.x+=4;
+            if(keys["Space"] && frames%15==0) bullets.push({x:p.x+18, y:p.y, v:-7});
+            
+            x.fillStyle="#0ff"; 
+            x.beginPath(); x.moveTo(p.x,p.y+20); x.lineTo(p.x+20,p.y); x.lineTo(p.x+40,p.y+20); x.fill(); // Skepp
+
+            // Skott
+            for(let i=bullets.length-1;i>=0;i--){
+                let b=bullets[i]; b.y+=b.v; x.fillRect(b.x,b.y,4,10);
+                if(b.y<0) bullets.splice(i,1);
+                // Träff?
+                enemies.forEach(e=>{
+                    if(e.a && b.x>e.x && b.x<e.x+e.w && b.y>e.y && b.y<e.y+e.h){ e.a=false; bullets.splice(i,1); score+=100; }
+                });
+            }
+
+            // Fiender
+            let wallHit=false;
+            enemies.forEach(e=>{
+                if(e.a){
+                    e.x += eDir;
+                    if(e.x>570 || e.x<0) wallHit=true;
+                    // Rita Virus
+                    x.fillStyle="#f00"; x.fillRect(e.x+5,e.y,20,20); 
+                    x.fillRect(e.x,e.y+10,5,10); x.fillRect(e.x+25,e.y+10,5,10); // Ben
+                    if(e.y > 520) over=true;
+                }
+            });
+
+            if(wallHit){ eDir=-eDir; enemies.forEach(e=>e.y+=20); }
+
+            x.fillStyle="#fff"; x.font="20px Courier"; x.textAlign="left"; x.fillText("SCORE: "+score, 10, 30);
+            frames++;
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>

@@ -22,7 +22,7 @@
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/scopedcss/Pages/Shared/_Layout.cshtml.rz.scp.css
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/scopedcss/bundle/CyberArcadeWeb.styles.css
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/scopedcss/projectbundle/CyberArcadeWeb.bundle.scp.css
-/Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/compressed/obsn4uej7x-fdrfi2ggk9.gz
+/Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/compressed/obsn4uej7x-w99mhj1v8f.gz
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/compressed/oaaxw5mwrx-61n19gt1b8.gz
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/compressed/5amkuywut4-xtxxf3hu2r.gz
 /Users/imraanmohamudali/cyberarcade/CyberArcadeWeb/obj/Debug/net9.0/compressed/nqcbv05mhv-bqjiyaj88i.gz

@@ -1,0 +1,63 @@
+@page
+@{
+    ViewData["Title"] = "Neon Pong";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neon Pong</title>
+    <style>
+        body { background-color: #050505; color: #ff00de; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { border: 3px solid #ff00de; background-color: #1a001a; box-shadow: 0 0 40px rgba(255, 0, 222, 0.4); display: block; }
+        .btn-back { margin-top: 15px; border: 1px solid #ff00de; color: #ff00de; padding: 8px 16px; text-decoration: none; transition: 0.3s; }
+        .btn-back:hover { background-color: #ff00de; color: white; }
+    </style>
+</head>
+<body>
+    <canvas id="gc" width="800" height="500"></canvas>
+    <div style="margin-top:10px; color:#ff88ee;">[W/S] Du • Datorn är omöjlig?</div>
+    <a href="/" class="btn-back">Tillbaka</a>
+    <script>
+        const c=document.getElementById("gc"), x=c.getContext("2d");
+        let p1y=200, p2y=200, bx=400, by=250, bvx=6, bvy=2, s1=0, s2=0;
+        
+        c.addEventListener('mousemove', e => {
+            let rect = c.getBoundingClientRect();
+            p1y = e.clientY - rect.top - 50; // Styr med musen för precision
+        });
+
+        setInterval(()=>{
+            // Flytta boll
+            bx+=bvx; by+=bvy;
+            // Studsa tak/golv
+            if(by<0 || by>c.height) bvy=-bvy;
+            
+            // Dator (AI)
+            if(p2y+50 < by-35) p2y+=5; else if(p2y+50 > by+35) p2y-=5;
+
+            // Studsa P1
+            if(bx<20 && by>p1y && by<p1y+100) { bvx=-bvx; let d=by-(p1y+50); bvy=d*0.1; }
+            // Studsa P2
+            if(bx>c.width-20 && by>p2y && by<p2y+100) { bvx=-bvx; let d=by-(p2y+50); bvy=d*0.1; }
+
+            // Poäng
+            if(bx<0) { s2++; reset(); }
+            if(bx>c.width) { s1++; reset(); }
+
+            // Rita
+            x.fillStyle="#1a001a"; x.fillRect(0,0,c.width,c.height);
+            x.fillStyle="#ff00de";
+            x.fillRect(0,p1y,15,100); // P1
+            x.fillRect(c.width-15,p2y,15,100); // P2
+            x.beginPath(); x.arc(bx,by,8,0,Math.PI*2); x.fill();
+            x.font="40px Courier New"; x.fillText(s1, 200, 50); x.fillText(s2, c.width-200, 50);
+            
+            // Nät
+            for(let i=0;i<c.height;i+=40) x.fillRect(c.width/2-1,i,2,20);
+        }, 1000/60);
+
+        function reset(){ bx=c.width/2; by=c.height/2; bvx=-bvx; bvy=2; }
+    </script>
+</body>
+</html>

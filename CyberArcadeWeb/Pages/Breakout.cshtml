@@ -1,0 +1,75 @@
+@page
+@{
+    ViewData["Title"] = "Firewall Breaker";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firewall Breaker</title>
+    <style>
+        body { background-color: #050505; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .game-container { position: relative; text-align: center; }
+        canvas { border: 3px solid #00ff41; background-color: #001100; box-shadow: 0 0 30px rgba(0, 255, 65, 0.4); display: block; }
+        .btn-back { display: inline-block; margin-top: 15px; border: 1px solid #444; color: #666; padding: 8px 16px; text-decoration: none; font-size: 12px; transition: 0.3s; text-transform: uppercase; }
+        .btn-back:hover { border-color: #00ff41; color: #00ff41; background-color: #001100; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gc" width="800" height="600"></canvas>
+        <div style="margin-top:10px; color:#888;">[VÄNSTER/HÖGER] Styr • [SPACE] Starta • [ESC] Avsluta</div>
+        <a href="/" class="btn-back">Tillbaka till Menyn</a>
+    </div>
+    <script>
+        const c=document.getElementById("gc"), x=c.getContext("2d");
+        let ball={x:400,y:300,dx:5,dy:-5,r:8}, paddle={w:100,h:15,x:350}, bricks=[], score=0, lives=3, run=false;
+        let r=5, co=8, pad=10, offT=50, offL=35;
+        for(let i=0;i<co;i++) for(let j=0;j<r;j++) bricks.push({x:0,y:0,s:1});
+        
+        document.addEventListener("keydown",e=>{
+            if(e.code=="ArrowRight") paddle.dx=8;
+            else if(e.code=="ArrowLeft") paddle.dx=-8;
+            else if(e.code=="Space" && !run) run=true;
+            else if(e.code=="Escape") window.location.href="/";
+        });
+        document.addEventListener("keyup",e=>{if(e.code=="ArrowRight"||e.code=="ArrowLeft") paddle.dx=0;});
+
+        function loop(){
+            x.fillStyle="#050505"; x.fillRect(0,0,c.width,c.height);
+            // Rita Bricks
+            bricks.forEach((b,i)=>{
+                if(b.s==1){
+                    let brickX=(i%co)*(75+pad)+offL, brickY=Math.floor(i/co)*(25+pad)+offT;
+                    b.x=brickX; b.y=brickY;
+                    x.fillStyle="#00ff41"; x.fillRect(brickX,brickY,75,25);
+                    // Kollision Brick
+                    if(ball.x>b.x && ball.x<b.x+75 && ball.y>b.y && ball.y<b.y+25){ ball.dy=-ball.dy; b.s=0; score+=10; }
+                }
+            });
+            // Rita Paddle
+            paddle.x+=paddle.dx||0;
+            if(paddle.x<0) paddle.x=0; if(paddle.x+paddle.w>c.width) paddle.x=c.width-paddle.w;
+            x.fillStyle="#00ccff"; x.fillRect(paddle.x,c.height-30,paddle.w,paddle.h);
+            
+            // Rita Boll
+            if(run){
+                ball.x+=ball.dx; ball.y+=ball.dy;
+                if(ball.x+ball.r>c.width || ball.x-ball.r<0) ball.dx=-ball.dx;
+                if(ball.y-ball.r<0) ball.dy=-ball.dy;
+                if(ball.y+ball.r>c.height){ lives--; run=false; ball.x=400; ball.y=300; if(lives<=0) {score=0; lives=3; bricks.forEach(b=>b.s=1);} }
+                // Kollision Paddle
+                if(ball.x>paddle.x && ball.x<paddle.x+paddle.w && ball.y+ball.r>c.height-30) ball.dy=-ball.dy;
+            }
+            x.fillStyle="white"; x.beginPath(); x.arc(ball.x,ball.y,ball.r,0,Math.PI*2); x.fill();
+            
+            // Text
+            x.font="20px Courier New"; x.fillText("SCORE: "+score, 20, 30); x.fillText("LIVES: "+lives, c.width-120, 30);
+            if(!run) { x.fillStyle="yellow"; x.textAlign="center"; x.fillText("TRYCK SPACE FÖR ATT STARTA", c.width/2, c.height/2); x.textAlign="left"; }
+            
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
