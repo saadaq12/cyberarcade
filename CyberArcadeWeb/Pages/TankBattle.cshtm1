@@ -1,0 +1,70 @@
+@page
+@{
+    ViewData["Title"] = "Tank Battle";
+}
+
+<h1 class="text-center">TANK DEFENSE</h1>
+<p class="text-center">Pilar för att flytta. Mellanslag för att skjuta.</p>
+
+<div style="text-align: center;">
+    <canvas id="tankCanvas" width="600" height="400" style="border: 2px solid #00ff41; background-color: #1a1a1a;"></canvas>
+    <br />
+    <a href="/" class="btn-cyber">Tillbaka till Hubben</a>
+</div>
+
+<script>
+    const canvas = document.getElementById("tankCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let tank = { x: 300, y: 350, width: 40, height: 40, color: "#00ff41" };
+    let bullets = [];
+    let enemies = [];
+    
+    // Skapa fiender
+    setInterval(() => {
+        enemies.push({ x: Math.random() * 560, y: 0, width: 30, height: 30, speed: 2 });
+    }, 1000);
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Rita Tank
+        ctx.fillStyle = tank.color;
+        ctx.fillRect(tank.x, tank.y, tank.width, tank.height);
+        // Kanon
+        ctx.fillRect(tank.x + 15, tank.y - 10, 10, 20);
+
+        // Hantera skott
+        bullets.forEach((b, index) => {
+            b.y -= 5;
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(b.x, b.y, 5, 10);
+            if (b.y < 0) bullets.splice(index, 1);
+        });
+
+        // Hantera fiender
+        enemies.forEach((e, eIndex) => {
+            e.y += e.speed;
+            ctx.fillStyle = "red";
+            ctx.fillRect(e.x, e.y, e.width, e.height);
+
+            // Kolla träff
+            bullets.forEach((b, bIndex) => {
+                if (b.x > e.x && b.x < e.x + e.width && b.y > e.y && b.y < e.y + e.height) {
+                    enemies.splice(eIndex, 1);
+                    bullets.splice(bIndex, 1);
+                }
+            });
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" && tank.x > 0) tank.x -= 20;
+        if (e.key === "ArrowRight" && tank.x < 560) tank.x += 20;
+        if (e.key === " ") bullets.push({ x: tank.x + 17, y: tank.y - 10 });
+    });
+
+    update();
+</script>
