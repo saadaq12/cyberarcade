@@ -1,0 +1,37 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Game Hub";
+}
+
+<div class="text-center">
+    <h1>CYBER ARCADE HUB</h1>
+    <p>Välj spelmodul för initiering...</p>
+
+    <div class="game-grid">
+        <a href="/GuessNumber" class="game-card">
+            <span class="game-icon">❓</span>
+            <span class="game-title">Gissa Numret</span>
+        </a>
+
+        <a href="/Snake" class="game-card">
+            <span class="game-icon">🐍</span>
+            <span class="game-title">Cyber Snake</span>
+        </a>
+
+        <a href="/TankBattle" class="game-card">
+            <span class="game-icon">🚜</span>
+            <span class="game-title">Tank Battle</span>
+        </a>
+
+        <a href="#" class="game-card" onclick="alert('DragonBall Z laddar energi... Kommer snart!');">
+            <span class="game-icon">🔥</span>
+            <span class="game-title">DragonBall Z</span>
+        </a>
+        
+        <a href="https://t8.com" target="_blank" class="game-card">
+            <span class="game-icon">🌐</span>
+            <span class="game-title">T8 Arkad</span>
+        </a>
+    </div>
+</div>

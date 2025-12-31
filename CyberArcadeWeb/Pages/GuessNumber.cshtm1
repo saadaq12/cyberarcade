@@ -1,0 +1,23 @@
+@page
+@model CyberArcadeWeb.Pages.GuessNumberModel
+@{
+    ViewData["Title"] = "Gissa Numret";
+}
+
+<h1>GISSA NUMRET</h1>
+<p>Jag tänker på ett tal mellan 1 och 10.</p>
+
+<form method="post">
+    <input type="number" asp-for="UserGuess" placeholder="?" required />
+    <button type="submit" class="btn-cyber">Gissa</button>
+</form>
+
+<br />
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <h2 style="color: yellow;">@Model.Message</h2>
+}
+
+<br />
+<a href="/" class="btn-cyber" style="font-size: 0.8em;">Tillbaka till menyn</a>

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("cyberarcade")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ec3209dd9dda179bbdb0208e38ed7bafce840d9c")]
 [assembly: System.Reflection.AssemblyProductAttribute("cyberarcade")]
 [assembly: System.Reflection.AssemblyTitleAttribute("cyberarcade")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

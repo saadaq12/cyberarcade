@@ -12,3 +12,4 @@
 /Users/imraanmohamudali/cyberarcade/obj/Debug/net9.0/cyberarcade.pdb
 /Users/imraanmohamudali/cyberarcade/obj/Debug/net9.0/cyberarcade.genruntimeconfig.cache
 /Users/imraanmohamudali/cyberarcade/obj/Debug/net9.0/ref/cyberarcade.dll
+/Users/imraanmohamudali/cyberarcade/obj/Debug/net9.0/cyberarcade.sourcelink.json
